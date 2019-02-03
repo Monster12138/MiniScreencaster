@@ -6,7 +6,7 @@
 class ThreadBase
 {
 public:
-	ThreadBase() :m_thread(nullptr) {}
+	ThreadBase():m_thread(nullptr){}
 
 	virtual ~ThreadBase() {}
 
@@ -15,7 +15,7 @@ public:
 		return m_thread;
 	}
 
-	virtual void start()
+	virtual void start() 
 	{
 		if (nullptr == m_thread)
 		{

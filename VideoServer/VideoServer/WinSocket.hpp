@@ -16,7 +16,7 @@ public:
 	 * 成功返回true
 	 * 失败返回false并抛出char * 异常
 	 */
-	Socket():socket_(INVALID_SOCKET)
+	Socket() :socket_(INVALID_SOCKET)
 	{}
 
 	Socket(const SOCKET& socket) :socket_(socket)
@@ -76,16 +76,13 @@ public:
 
 		if (::connect(socket_, (sockaddr*)& addr, sizeof(addr)) == SOCKET_ERROR)
 		{
-			throw "Connect error!";
-			::closesocket(socket_);
-			socket_ = INVALID_SOCKET;
-			return false;
+			Sleep(1);
 		}
 
 		return true;
 	}
 
-	SOCKET Accept(sockaddr * clientAddr, int addrLen)
+	SOCKET Accept(sockaddr* clientAddr, int addrLen)
 	{
 		return ::accept(socket_, clientAddr, &addrLen);
 	}
@@ -102,7 +99,7 @@ public:
 		return ret;
 	}
 
-	int Recv(char *buf, int size)
+	int Recv(char* buf, int size)
 	{
 		int ret = ::recv(socket_, buf, size, 0);
 		if (SOCKET_ERROR == ret)
@@ -122,6 +119,11 @@ public:
 	SOCKET getSocket()
 	{
 		return socket_;
+	}
+
+	void setSocket(SOCKET socket)
+	{
+		socket_ = socket;
 	}
 private:
 	SOCKET socket_;

@@ -33,7 +33,7 @@ public:
 		return true;
 	}
 
-	bool Bind(const int af, const int port, const char* ip = nullptr)
+	bool Bind(const int port, const char* ip = nullptr)
 	{
 		sockaddr_in addr;
 		addr.sin_family = AF_INET;
@@ -74,12 +74,9 @@ public:
 		addr.sin_port = htons(port);
 		addr.sin_addr.S_un.S_addr = inet_addr(ip);
 
-		if (::connect(socket_, (sockaddr*)& addr, sizeof(addr)) == SOCKET_ERROR)
+		while (::connect(socket_, (sockaddr*)& addr, sizeof(addr)) == SOCKET_ERROR)
 		{
-			throw "Connect error!";
-			::closesocket(socket_);
-			socket_ = INVALID_SOCKET;
-			return false;
+			Sleep(1);
 		}
 
 		return true;

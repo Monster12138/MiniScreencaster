@@ -23,7 +23,7 @@ struct sentbuf {
 class Sender :public ThreadBase
 {
 public:
-	Sender() :Sender_quit(false), ServSocket_(), ClntSocket_() {}
+	Sender():Sender_quit(false),ServSocket_(), ClntSocket_() {}
 
 	~Sender()
 	{}
@@ -37,7 +37,7 @@ public:
 			ServSocket_.Create(AF_INET, SOCK_STREAM, 0);
 
 			//°ó¶¨Ì×½Ó×Ö
-			ServSocket_.Bind(8888);
+			ServSocket_.Bind(9999);
 			//½øÈë¼àÌı×´Ì¬
 			ServSocket_.Listen(5);
 		}

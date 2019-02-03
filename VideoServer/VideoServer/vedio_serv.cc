@@ -1,4 +1,4 @@
-#if 1
+#if 0
 
 #include "opencv2/opencv.hpp"
 #include "WinSocket.hpp"
@@ -92,5 +92,30 @@ int main(int, char**)
 }
 
 
-#endif
+#else
 
+#include "Sender.hpp"
+#include "Receiver.hpp"
+#include <iostream>
+
+int main()
+{
+	//³õÊ¼»¯ DLL
+	WSADATA data;
+	WORD w = MAKEWORD(2, 0);
+	::WSAStartup(w, &data);
+
+	Sender sender;
+	Receiver receiver;
+
+	sender.start();
+	receiver.start();
+
+	sender.getpThread()->join();
+	receiver.getpThread()->join();
+
+	WSACleanup();
+	return 0;
+}
+
+#endif
