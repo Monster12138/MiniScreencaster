@@ -4,7 +4,7 @@
 #include "WinSocket.hpp"
 #include "ThreadBase.hpp"
 #include "opencv2/opencv.hpp"
-#include <Windows.h>
+#include "Screen.hpp"
 #pragma comment (lib, "ws2_32.lib")  //╪сть ws2_32.dll
 #pragma warning(disable : 4996)
 
@@ -23,7 +23,7 @@ struct sentbuf {
 class Sender :public ThreadBase
 {
 public:
-	Sender() :Sender_quit(false), ServSocket_(), ClntSocket_() {}
+	Sender() :Sender_quit(false){}
 
 	~Sender()
 	{}
@@ -55,13 +55,17 @@ public:
 		ThreadBase::quit();
 	}
 
-	void sendMat(Mat image) {
-		for (int k = 0; k < 32; k++) {
+	void sendMat(Mat image) 
+	{
+		for (int k = 0; k < 32; k++) 
+		{
 			int num1 = IMG_HEIGHT / 32 * k;
-			for (int i = 0; i < IMG_HEIGHT / 32; i++) {
+			for (int i = 0; i < IMG_HEIGHT / 32; i++) 
+			{
 				int num2 = i * IMG_WIDTH * 3;
 				uchar* ucdata = image.ptr<uchar>(i + num1);
-				for (int j = 0; j < IMG_WIDTH * 3; j++) {
+				for (int j = 0; j < IMG_WIDTH * 3; j++) 
+				{
 					data.buf[num2 + j] = ucdata[j];
 				}
 			}
@@ -78,15 +82,8 @@ public:
 private:
 	virtual void threadMain()override
 	{
-		VideoCapture cap(0); // open the default camera
-		if (!cap.isOpened())  // check if we succeeded
-		{
-			std::cout << "Capture open failed!\n";
-			quit();
-		}
-		Mat frame;
 
-
+		Mat tmp;
 		SOCKADDR clntAddr;
 		int nSize = sizeof(SOCKADDR);
 		ClntSocket_.setSocket(ServSocket_.Accept((sockaddr*)& clntAddr, nSize));
@@ -96,10 +93,16 @@ private:
 
 		while (!Sender_quit)
 		{
-			cap >> frame; // get a new frame from camera
-			sendMat(frame);
+			Screen(hBmp);
+			HBitmapToMat(hBmp, screen);
+
+			resize(screen, tmp, Size(800, 600), 0, 0);
+			imshow("Desktop", tmp);
+			sendMat(screen);
+			std::cout << "Send a Mat\n";
 		}
 
+		DeleteObject(hBmp);
 		ServSocket_.Close();
 		ClntSocket_.Close();
 
@@ -109,6 +112,8 @@ private:
 	Socket ClntSocket_;
 	bool Sender_quit;
 	sentbuf data;
+	HBITMAP	hBmp;
+	Mat screen;
 };
 
 #endif // !_SENDER_HPP_

@@ -105,13 +105,10 @@ int main()
 	WORD w = MAKEWORD(2, 0);
 	::WSAStartup(w, &data);
 
-	Sender sender;
 	Receiver receiver;
 
-	sender.start();
 	receiver.start();
 
-	sender.getpThread()->join();
 	receiver.getpThread()->join();
 
 	WSACleanup();

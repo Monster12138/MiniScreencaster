@@ -59,32 +59,40 @@ public:
 		ThreadBase::quit();
 	}
 
-	Mat recieveMat() {
+	Mat recieveMat()
+	{
 		Mat img(IMG_HEIGHT, IMG_WIDTH, CV_8UC3, cv::Scalar(0));
 		int needRecv = sizeof(recvbuf);
 		int count = 0;
-		for (int i = 0; i < 32; i++) {
+		for (int i = 0; i < 32; i++)
+		{
 			int pos = 0;
 			int len0 = 0;
-			while (pos < needRecv) {
+			while (pos < needRecv)
+			{
 				len0 = ClntSocket.Recv((char*)(&data_recv) + pos, needRecv - pos);
 				//len0 = recv(sockServer, (char*)(&data_recv) + pos, needRecv - pos, 0);
 				pos += len0;
 			}
 			count = count + data_recv.flag;
 			int num1 = IMG_HEIGHT / 32 * i;
-			for (int j = 0; j < IMG_HEIGHT / 32; j++) {
+			for (int j = 0; j < IMG_HEIGHT / 32; j++)
+			{
 				int num2 = j * IMG_WIDTH * 3;
 				uchar* ucdata = img.ptr<uchar>(j + num1);
-				for (int k = 0; k < IMG_WIDTH * 3; k++) {
+				for (int k = 0; k < IMG_WIDTH * 3; k++)
+				{
 					ucdata[k] = data_recv.buf[num2 + k];
 				}
 			}
-			if (data_recv.flag == 2) {
-				if (count == 33) {
+			if (data_recv.flag == 2)
+			{
+				if (count == 33)
+				{
 					return img;
 				}
-				else {
+				else
+				{
 					count = 0;
 					i = 0;
 				}
@@ -97,10 +105,16 @@ public:
 private:
 	virtual void threadMain()override
 	{
-		while (Recver_quit) {
-			Mat frame = recieveMat();
-			if (frame.data) imshow("Camera", frame);
-			if (waitKey(1) >= 0)break;
+		while (!Recver_quit)
+		{
+			recvMat = recieveMat();
+			if (recvMat.data)
+			{
+				resize(recvMat, dstMat, Size(800, 600), 0, 0);
+				imshow("Desktop", recvMat);
+			}
+			std::cout << "Recv a Mat\n";
+			//if (waitKey(1) >= 0)break;
 		}
 
 		ClntSocket.Close();
@@ -109,6 +123,8 @@ private:
 	recvbuf data_recv;
 	Socket ClntSocket;
 	bool Recver_quit;
+	Mat recvMat;
+	Mat dstMat;
 };
 
 #endif // !_RECEIVER_HPP_

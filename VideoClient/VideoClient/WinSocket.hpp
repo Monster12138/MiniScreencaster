@@ -1,7 +1,6 @@
 #ifndef _WINSOCKET_HPP_
 #define _WINSOCKET_HPP_
 
-
 #include <WinSock2.h>
 #include <iostream>
 

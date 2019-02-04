@@ -2,6 +2,7 @@
 #define _THREAD_HPP_
 
 #include <thread>
+#include <iostream>
 
 class ThreadBase
 {
