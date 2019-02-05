@@ -94,7 +94,6 @@ int main(int, char**)
 
 #else
 
-#include "Sender.hpp"
 #include "Receiver.hpp"
 #include <iostream>
 

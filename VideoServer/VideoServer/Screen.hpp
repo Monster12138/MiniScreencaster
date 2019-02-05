@@ -11,7 +11,7 @@ HBITMAP	hOld;
 
 
 //抓取当前屏幕函数
-void Screen(HBITMAP & hBmp) {
+void Screen(HBITMAP& hBmp) {
 
 	//创建画板
 	HDC hScreen = CreateDC("DISPLAY", NULL, NULL, NULL);
@@ -27,10 +27,12 @@ void Screen(HBITMAP & hBmp) {
 	//释放对象
 	DeleteDC(hScreen);
 	DeleteDC(hCompDC);
+
 }
 
 //把HBITMAP型转成Mat型
 bool HBitmapToMat(HBITMAP& _hBmp, Mat& _mat)
+
 {
 	//BITMAP操作
 	BITMAP bmp;
@@ -39,7 +41,6 @@ bool HBitmapToMat(HBITMAP& _hBmp, Mat& _mat)
 	int depth = bmp.bmBitsPixel == 1 ? IPL_DEPTH_1U : IPL_DEPTH_8U;
 	//mat操作
 	Mat v_mat;
-	std::cout << bmp.bmWidth << "," << bmp.bmHeight << std::endl;
 	v_mat.create(Size(bmp.bmWidth, bmp.bmHeight), CV_MAKETYPE(CV_8U, nChannels));
 	GetBitmapBits(_hBmp, bmp.bmHeight * bmp.bmWidth * nChannels, v_mat.data);
 	_mat = v_mat;

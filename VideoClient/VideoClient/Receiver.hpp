@@ -110,7 +110,7 @@ private:
 			recvMat = recieveMat();
 			if (recvMat.data) 
 			{
-				resize(recvMat, dstMat, Size(800, 600), 0, 0);
+				resize(recvMat, dstMat, Size(640, 480), 0, 0);
 				imshow("Desktop", dstMat);
 			}
 			//if (waitKey(1) >= 0)break;

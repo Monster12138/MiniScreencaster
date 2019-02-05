@@ -9,8 +9,8 @@
 using namespace cv;
 
 //待传输图像默认大小为 640*480，可修改
-#define IMG_WIDTH 640	// 需传输图像的宽
-#define IMG_HEIGHT 480	// 需传输图像的高
+#define IMG_WIDTH 1920	// 需传输图像的宽
+#define IMG_HEIGHT 1080	// 需传输图像的高
 //默认格式为CV_8UC3
 #define BUFFER_SIZE IMG_WIDTH*IMG_HEIGHT*3/32 
 struct recvbuf
@@ -91,8 +91,9 @@ int main() {
 }
 #endif
 
+
+
 #include "Sender.hpp"
-#include "Receiver.hpp"
 #include <iostream>
 
 int main()
@@ -101,6 +102,7 @@ int main()
 	WSADATA data;
 	WORD w = MAKEWORD(2, 0);
 	::WSAStartup(w, &data);
+
 
 	Sender sender;
 
@@ -115,9 +117,10 @@ int main()
 
 
 #if 0
+
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2\core\types_c.h"
+#include "opencv2/core/types_c.h"
 #include <Windows.h>
 using namespace cv;
 
@@ -174,11 +177,11 @@ int main()
 		HBitmapToMat(hBmp, src);
 
 		//调整大小
-		resize(src, dst, Size(800, 600), 0, 0);
+		resize(src, dst, Size(1000, 600), 0, 0);
 
 		imshow("dst", dst);
 		DeleteObject(hBmp);
-		waitKey(200);//这里调节帧数  现在200ms是5帧
+		waitKey(30);//这里调节帧数  现在200ms是5帧
 
 	}
 	return 0;

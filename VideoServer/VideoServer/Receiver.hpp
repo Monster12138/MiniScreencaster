@@ -6,6 +6,7 @@
 #include <Windows.h>
 #include "WinSocket.hpp"
 #include "ThreadBase.hpp"
+#include "Screen.hpp"
 #pragma comment (lib, "ws2_32.lib")
 #pragma warning(disable : 4996)
 using namespace cv;
@@ -27,7 +28,7 @@ struct recvbuf
 class Receiver :public ThreadBase
 {
 public:
-	Receiver() :Recver_quit(false) {}
+	Receiver() :Recver_quit(false){}
 
 	virtual void start()
 	{
@@ -72,6 +73,7 @@ public:
 			{
 				len0 = ClntSocket.Recv((char*)(&data_recv) + pos, needRecv - pos);
 				//len0 = recv(sockServer, (char*)(&data_recv) + pos, needRecv - pos, 0);
+				std::cout << "Receive " << len0/1024 << "KB data\n";
 				pos += len0;
 			}
 			count = count + data_recv.flag;
@@ -105,15 +107,20 @@ public:
 private:
 	virtual void threadMain()override
 	{
+		Mat dstMat;
 		while (!Recver_quit)
 		{
 			recvMat = recieveMat();
-			if (recvMat.data)
+			//Screen(hBmp);
+
+			//resize(recvMat, dstMat, Size(640, 480), 0, 0);
+			imshow("Receiver", recvMat);
+			waitKey(30);
+			//if (recvMat.data)
 			{
-				resize(recvMat, dstMat, Size(800, 600), 0, 0);
-				imshow("Desktop", recvMat);
+				//resize(recvMat, dstMat, Size(640, 480), 0, 0);
+
 			}
-			std::cout << "Recv a Mat\n";
 			//if (waitKey(1) >= 0)break;
 		}
 
@@ -123,8 +130,8 @@ private:
 	recvbuf data_recv;
 	Socket ClntSocket;
 	bool Recver_quit;
+	HBITMAP hBmp;
 	Mat recvMat;
-	Mat dstMat;
 };
 
 #endif // !_RECEIVER_HPP_
