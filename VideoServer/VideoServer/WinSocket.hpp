@@ -76,7 +76,8 @@ public:
 
 		if (::connect(socket_, (sockaddr*)& addr, sizeof(addr)) == SOCKET_ERROR)
 		{
-			Sleep(1);
+			throw "Connect error!";
+			return false;
 		}
 
 		return true;

@@ -12,14 +12,14 @@
 using namespace cv;
 
 //待传输图像默认大小为 640*480，可修改
-#define IMG_WIDTH 640	// 需传输图像的宽
-#define IMG_HEIGHT 480	// 需传输图像的高
+#define IMG_WIDTH 1536	// 需传输图像的宽
+#define IMG_HEIGHT 864	// 需传输图像的高
 //默认格式为CV_8UC3
-#define BUFFER_SIZE IMG_WIDTH*IMG_HEIGHT*3/32 
+#define BUFFER_SIZE IMG_WIDTH*IMG_HEIGHT*4/32 
 
 struct recvbuf
 {
-	char buf[BUFFER_SIZE];
+	uchar buf[BUFFER_SIZE];
 	int flag;
 };
 
@@ -28,7 +28,7 @@ struct recvbuf
 class Receiver :public ThreadBase
 {
 public:
-	Receiver() :Recver_quit(false){}
+	Receiver() :Recver_quit(false),recvMat(IMG_HEIGHT, IMG_WIDTH, CV_8UC4) {}
 
 	virtual void start()
 	{
@@ -60,11 +60,11 @@ public:
 		ThreadBase::quit();
 	}
 
-	Mat recieveMat()
+	bool recieveMat()
 	{
-		Mat img(IMG_HEIGHT, IMG_WIDTH, CV_8UC3, cv::Scalar(0));
 		int needRecv = sizeof(recvbuf);
 		int count = 0;
+
 		for (int i = 0; i < 32; i++)
 		{
 			int pos = 0;
@@ -72,26 +72,35 @@ public:
 			while (pos < needRecv)
 			{
 				len0 = ClntSocket.Recv((char*)(&data_recv) + pos, needRecv - pos);
-				//len0 = recv(sockServer, (char*)(&data_recv) + pos, needRecv - pos, 0);
-				std::cout << "Receive " << len0/1024 << "KB data\n";
+
+				std::cout << "Receive " << len0 << " Byte data\n";
+				if (len0 < 0)
+				{
+					Recver_quit = true;
+					return false;
+				}
 				pos += len0;
 			}
+
 			count = count + data_recv.flag;
 			int num1 = IMG_HEIGHT / 32 * i;
 			for (int j = 0; j < IMG_HEIGHT / 32; j++)
 			{
-				int num2 = j * IMG_WIDTH * 3;
-				uchar* ucdata = img.ptr<uchar>(j + num1);
-				for (int k = 0; k < IMG_WIDTH * 3; k++)
+				int num2 = j * IMG_WIDTH * 4;
+				uchar* ucdata = recvMat.ptr<uchar>(j + num1);
+
+				for (int k = 0; k < IMG_WIDTH * 4; k++)
 				{
 					ucdata[k] = data_recv.buf[num2 + k];
 				}
 			}
+
 			if (data_recv.flag == 2)
 			{
 				if (count == 33)
 				{
-					return img;
+					std::cout << sum << std::endl;
+					return true;
 				}
 				else
 				{
@@ -100,26 +109,38 @@ public:
 				}
 			}
 		}
+		return false;
+	}
 
-		return img;
+	int64_t CheckMat()
+	{
+		int64_t sum = 0;
+		for (int i = 0; i < IMG_HEIGHT; ++i)
+		{ 
+			uchar* ucdata = recvMat.ptr<uchar>(i);
+			for (int j = 0; j < IMG_WIDTH; ++j)
+			{
+				sum += ucdata[j];
+			}
+		}
+
+		return sum;
 	}
 
 private:
 	virtual void threadMain()override
 	{
 		Mat dstMat;
-		while (!Recver_quit)
+		//while (!Recver_quit)
 		{
-			recvMat = recieveMat();
-			//Screen(hBmp);
+			recieveMat();
+			std::cout << CheckMat() << std::endl;
 
-			//resize(recvMat, dstMat, Size(640, 480), 0, 0);
-			imshow("Receiver", recvMat);
-			waitKey(30);
-			//if (recvMat.data)
+			if (recvMat.data)
 			{
-				//resize(recvMat, dstMat, Size(640, 480), 0, 0);
-
+				resize(recvMat, dstMat, Size(640, 480), 0, 0);
+				imshow("Receiver", dstMat);
+				waitKey(0);
 			}
 			//if (waitKey(1) >= 0)break;
 		}

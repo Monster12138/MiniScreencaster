@@ -9,14 +9,14 @@
 #pragma warning(disable : 4996)
 
 //待传输图像默认大小为 640*480，可修改
-#define IMG_WIDTH 640	// 需传输图像的宽
-#define IMG_HEIGHT 480	// 需传输图像的高
-//默认格式为CV_8UC3
-#define BUFFER_SIZE IMG_WIDTH*IMG_HEIGHT*3/32 
+#define IMG_WIDTH 1536	// 需传输图像的宽
+#define IMG_HEIGHT 864	// 需传输图像的高
+//默认格式为CV_8UC4
+#define BUFFER_SIZE IMG_WIDTH*IMG_HEIGHT*4/32 
 using namespace cv;
 
 struct sentbuf {
-	char buf[BUFFER_SIZE];
+	uchar buf[BUFFER_SIZE];
 	int flag;
 };
 
@@ -67,33 +67,49 @@ public:
 			int num1 = IMG_HEIGHT / 32 * k;
 			for (int i = 0; i < IMG_HEIGHT / 32; i++) 
 			{
-				int num2 = i * IMG_WIDTH * 3;
+				int num2 = i * IMG_WIDTH * 4;
 				uchar* ucdata = image.ptr<uchar>(i + num1);
-				for (int j = 0; j < IMG_WIDTH * 3; j++) 
+
+				for (int j = 0; j < IMG_WIDTH * 4; j++) 
 				{
 					data_.buf[num2 + j] = ucdata[j];
 				}
 			}
+			
 			if (k == 31)
 				data_.flag = 2;
 			else
 				data_.flag = 1;
 
-			if (ClntSocket_.Send((char*)(&data_), sizeof(data_)) < 0)
+			int ret;
+			if ((ret = ClntSocket_.Send((char*)(&data_), sizeof(data_))) < 0)
 			{
 				Sender_quit = true;
 			}
-			std::cout << "Send " << sizeof(data_)/1024 << "KB data\n";
+			std::cout << "Send " << ret << " Byte data\n";
 			//send(sockClient, (char*)(&data), sizeof(data), 0);
 		}
+	}
+
+
+	int64_t CheckMat()
+	{
+		int64_t sum = 0;
+		for (int i = 0; i < IMG_HEIGHT; ++i)
+		{
+			uchar* ucdata = screen_.ptr<uchar>(i);
+			for (int j = 0; j < IMG_WIDTH; ++j)
+			{
+				sum += ucdata[j];
+			}
+		}
+
+		return sum;
 	}
 
 private:
 	virtual void threadMain()override
 	{
-		VideoCapture cap(0); // open the default camera
-		if (!cap.isOpened())  // check if we succeeded
-			return;
 		SOCKADDR clntAddr;
 		int nSize = sizeof(SOCKADDR);
 		while (1)
@@ -101,21 +117,21 @@ private:
 			Sender_quit = false;
 			std::cout << "Waiting Connect...\n";
 			ClntSocket_.setSocket(ServSocket_.Accept((sockaddr*)& clntAddr, nSize));
-			//SOCKET clntSock = accept(servSock, (SOCKADDR*)& clntAddr, &nSize);
 			std::cout << "linked\n";
 
 			Mat dstMat;
 			HBITMAP hBmp;
-			while (!Sender_quit)
+			//while (!Sender_quit)
 			{
 				Screen(hBmp);
-				HBitmapToMat(hBmp, screen_);
-				resize(screen_, dstMat, Size(640, 480), 0, 0);
-				//imshow("Sender", dstMat);
-				//cap >> dstMat;
-				sendMat(dstMat);
+				HBitmapToMat(hBmp, screen_); 
+				//resize(screen_, dstMat, Size(640, 480), 0, 0);
 				
-				waitKey(30);
+				std::cout << CheckMat() << std::endl;
+				sendMat(screen_);	
+				
+				imshow("Sender", screen_);
+				waitKey(0);
 			}
 			std::cout << "Disconnect!\n";
 		}
