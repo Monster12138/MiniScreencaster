@@ -1,10 +1,11 @@
-
-#if 1
+#if 0
 
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/core/types_c.h"
 #include <Windows.h>
+#include <shellscalingapi.h>
+
 using namespace cv;
 
 HBITMAP	hBmp;
@@ -16,9 +17,14 @@ void Screen() {
 	//创建画板
 	HDC hScreen = CreateDC("DISPLAY", NULL, NULL, NULL);
 	HDC	hCompDC = CreateCompatibleDC(hScreen);
+	
 	//取屏幕宽度和高度
+	SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 	int		nWidth = GetSystemMetrics(SM_CXSCREEN);
 	int		nHeight = GetSystemMetrics(SM_CYSCREEN);
+
+	std::cout << "width:" << nWidth << std::endl;
+	std::cout << "height:" << nHeight << std::endl;
 	//创建Bitmap对象
 	hBmp = CreateCompatibleBitmap(hScreen, nWidth, nHeight);
 	hOld = (HBITMAP)SelectObject(hCompDC, hBmp);
@@ -49,7 +55,7 @@ bool HBitmapToMat(HBITMAP& _hBmp, Mat& _mat)
 
 int main()
 {
-	while (1)
+	//while (1)
 	{
 		Mat src;
 		Mat dst;
@@ -60,11 +66,11 @@ int main()
 		HBitmapToMat(hBmp, src);
 
 		//调整大小
-		resize(src, dst, Size(1000, 600), 0, 0);
+		resize(src, dst, Size(960, 540), 0, 0);
 
 		imshow("dst", dst);
 		DeleteObject(hBmp);
-		waitKey(30);//这里调节帧数  现在200ms是5帧
+		waitKey(0);//这里调节帧数  现在200ms是5帧
 
 	}
 	return 0;
@@ -83,6 +89,8 @@ int main()
 	WORD w = MAKEWORD(2, 0);
 	::WSAStartup(w, &data);
 
+	GetWidthAndHeight(IMG_WIDTH, IMG_HEIGHT);
+	BUFFER_SIZE = IMG_WIDTH * IMG_HEIGHT * 4 / 32;
 
 	Sender sender;
 

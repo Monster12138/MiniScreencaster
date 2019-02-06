@@ -11,16 +11,15 @@
 #pragma warning(disable : 4996)
 using namespace cv;
 
-//待传输图像默认大小为 640*480，可修改
-#define IMG_WIDTH 1536	// 需传输图像的宽
-#define IMG_HEIGHT 864	// 需传输图像的高
-//默认格式为CV_8UC3
-#define BUFFER_SIZE IMG_WIDTH*IMG_HEIGHT*4/32 
+int IMG_WIDTH;
+int IMG_HEIGHT;
+int BUFFER_SIZE = 0;
 
-struct recvbuf
-{
-	uchar buf[BUFFER_SIZE];
+struct recvbuf {
 	int flag;
+	int size;
+	uchar buf[];
+	recvbuf() :flag(0), size(sizeof(recvbuf) + BUFFER_SIZE) {}
 };
 
 
@@ -28,7 +27,20 @@ struct recvbuf
 class Receiver :public ThreadBase
 {
 public:
-	Receiver() :Recver_quit(false),recvMat(IMG_HEIGHT, IMG_WIDTH, CV_8UC4) {}
+	Receiver() :data_recv((recvbuf*)new char*[sizeof(recvbuf) + BUFFER_SIZE]), Recver_quit(false),recvMat(IMG_HEIGHT, IMG_WIDTH, CV_8UC4) 
+	{
+		data_recv->size = sizeof(data_recv) + BUFFER_SIZE;
+	}
+
+
+	~Receiver()
+	{
+		if (data_recv)
+		{
+			delete[] data_recv;
+			data_recv = nullptr;
+		}
+	}
 
 	virtual void start()
 	{
@@ -62,7 +74,7 @@ public:
 
 	bool recieveMat()
 	{
-		int needRecv = sizeof(recvbuf);
+		int needRecv = data_recv->size;
 		int count = 0;
 
 		for (int i = 0; i < 32; i++)
@@ -71,7 +83,7 @@ public:
 			int len0 = 0;
 			while (pos < needRecv)
 			{
-				len0 = ClntSocket.Recv((char*)(&data_recv) + pos, needRecv - pos);
+				len0 = ClntSocket.Recv((char*)data_recv + pos, needRecv - pos);
 
 				std::cout << "Receive " << len0 << " Byte data\n";
 				if (len0 < 0)
@@ -82,7 +94,7 @@ public:
 				pos += len0;
 			}
 
-			count = count + data_recv.flag;
+			count = count + data_recv->flag;
 			int num1 = IMG_HEIGHT / 32 * i;
 			for (int j = 0; j < IMG_HEIGHT / 32; j++)
 			{
@@ -91,11 +103,11 @@ public:
 
 				for (int k = 0; k < IMG_WIDTH * 4; k++)
 				{
-					ucdata[k] = data_recv.buf[num2 + k];
+					ucdata[k] = data_recv->buf[num2 + k];
 				}
 			}
 
-			if (data_recv.flag == 2)
+			if (data_recv->flag == 2)
 			{
 				if (count == 33)
 				{
@@ -131,16 +143,16 @@ private:
 	virtual void threadMain()override
 	{
 		Mat dstMat;
-		//while (!Recver_quit)
+		while (!Recver_quit)
 		{
 			recieveMat();
 			std::cout << CheckMat() << std::endl;
 
 			if (recvMat.data)
 			{
-				resize(recvMat, dstMat, Size(640, 480), 0, 0);
+				resize(recvMat, dstMat, Size(960, 540), 0, 0);
 				imshow("Receiver", dstMat);
-				waitKey(0);
+				waitKey(30);
 			}
 			//if (waitKey(1) >= 0)break;
 		}
@@ -148,7 +160,7 @@ private:
 		ClntSocket.Close();
 	}
 
-	recvbuf data_recv;
+	recvbuf* data_recv;
 	Socket ClntSocket;
 	bool Recver_quit;
 	HBITMAP hBmp;

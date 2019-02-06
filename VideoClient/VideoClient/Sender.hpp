@@ -8,25 +8,35 @@
 #pragma comment (lib, "ws2_32.lib")  //加载 ws2_32.dll
 #pragma warning(disable : 4996)
 
-//待传输图像默认大小为 640*480，可修改
-#define IMG_WIDTH 1536	// 需传输图像的宽
-#define IMG_HEIGHT 864	// 需传输图像的高
 //默认格式为CV_8UC4
-#define BUFFER_SIZE IMG_WIDTH*IMG_HEIGHT*4/32 
 using namespace cv;
 
+int IMG_WIDTH;
+int IMG_HEIGHT;
+int BUFFER_SIZE = 0;
+
 struct sentbuf {
-	uchar buf[BUFFER_SIZE];
 	int flag;
+	int size;
+	uchar buf[];
+	sentbuf() :flag(0), size(sizeof(sentbuf) + BUFFER_SIZE) {}
 };
 
 class Sender :public ThreadBase
 {
 public:
-	Sender() :Sender_quit(false){}
+	Sender() :data_((sentbuf*)new char* [sizeof(sentbuf) + BUFFER_SIZE]), Sender_quit(false)
+	{
+		data_->size = sizeof(sentbuf) + BUFFER_SIZE;
+	}
 
 	~Sender()
 	{
+		if (data_)
+		{
+			delete[] data_;
+			data_ = nullptr;
+		}
 		ServSocket_.Close();
 		ClntSocket_.Close();
 	}
@@ -72,17 +82,18 @@ public:
 
 				for (int j = 0; j < IMG_WIDTH * 4; j++) 
 				{
-					data_.buf[num2 + j] = ucdata[j];
+					data_->buf[num2 + j] = ucdata[j];
 				}
 			}
 			
 			if (k == 31)
-				data_.flag = 2;
+				data_->flag = 2;
 			else
-				data_.flag = 1;
+				data_->flag = 1;
 
 			int ret;
-			if ((ret = ClntSocket_.Send((char*)(&data_), sizeof(data_))) < 0)
+
+			if ((ret = ClntSocket_.Send((char*)data_, data_->size)) < 0)
 			{
 				Sender_quit = true;
 			}
@@ -121,9 +132,9 @@ private:
 
 			Mat dstMat;
 			HBITMAP hBmp;
-			//while (!Sender_quit)
+			while (!Sender_quit)
 			{
-				Screen(hBmp);
+				Screen(hBmp, IMG_WIDTH, IMG_HEIGHT);
 				HBitmapToMat(hBmp, screen_); 
 				//resize(screen_, dstMat, Size(640, 480), 0, 0);
 				
@@ -131,17 +142,17 @@ private:
 				sendMat(screen_);	
 				
 				imshow("Sender", screen_);
-				waitKey(0);
+				waitKey(30);
 			}
 			std::cout << "Disconnect!\n";
 		}
 		
 	}
 
+	sentbuf* data_;
 	Socket ServSocket_;
 	Socket ClntSocket_;
 	bool Sender_quit;
-	sentbuf data_;
 	BITMAP	Bmp_;
 	Mat screen_;
 };

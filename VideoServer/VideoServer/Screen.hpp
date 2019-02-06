@@ -5,20 +5,27 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2\core\types_c.h"
 #include <Windows.h>
+#include <shellscalingapi.h>
+
 using namespace cv;
 
 HBITMAP	hOld;
 
+void GetWidthAndHeight(int& width, int& height)
+{
+	//取屏幕宽度和高度
+	SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+	width = GetSystemMetrics(SM_CXSCREEN);
+	height = GetSystemMetrics(SM_CYSCREEN);
+}
 
 //抓取当前屏幕函数
-void Screen(HBITMAP& hBmp) {
+void Screen(HBITMAP& hBmp, const int nWidth, const int nHeight) {
 
 	//创建画板
 	HDC hScreen = CreateDC("DISPLAY", NULL, NULL, NULL);
 	HDC	hCompDC = CreateCompatibleDC(hScreen);
-	//取屏幕宽度和高度
-	int		nWidth = GetSystemMetrics(SM_CXSCREEN);
-	int		nHeight = GetSystemMetrics(SM_CYSCREEN);
+
 	//创建Bitmap对象
 	hBmp = CreateCompatibleBitmap(hScreen, nWidth, nHeight);
 	hOld = (HBITMAP)SelectObject(hCompDC, hBmp);
@@ -27,7 +34,6 @@ void Screen(HBITMAP& hBmp) {
 	//释放对象
 	DeleteDC(hScreen);
 	DeleteDC(hCompDC);
-
 }
 
 //把HBITMAP型转成Mat型
