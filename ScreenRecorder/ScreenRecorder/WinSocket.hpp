@@ -26,7 +26,8 @@ public:
 		socket_ = ::socket(af, type, protocol);
 		if (socket_ == INVALID_SOCKET)
 		{
-			throw "Create error!";
+			//throw "Create error!";
+			std::cout << "Create error!\n";
 			return false;
 		}
 		return true;
@@ -48,7 +49,8 @@ public:
 
 		if (::bind(socket_, (sockaddr*)& addr, sizeof(addr)) == SOCKET_ERROR)
 		{
-			throw "Bind error!";
+			//throw "Bind error!";
+			std::cout << "Bind error!\n";
 			return false;
 		}
 
@@ -59,14 +61,16 @@ public:
 	{
 		if (::listen(socket_, backlog) == SOCKET_ERROR)
 		{
-			throw "Listen error!";
+			//throw "Listen error!";
+			std::cout << "Listen error!\n";
+
 			return false;
 		}
 
 		return true;
 	}
 
-	bool Connect(const int af, const int port, const char* ip)
+	bool Connect(const int port, const char* ip)
 	{
 		sockaddr_in addr;
 		addr.sin_family = AF_INET;
@@ -75,7 +79,7 @@ public:
 
 		while (::connect(socket_, (sockaddr*)& addr, sizeof(addr)) == SOCKET_ERROR)
 		{
-			Sleep(1);
+			return false;
 		}
 
 		return true;
@@ -92,6 +96,7 @@ public:
 		if (SOCKET_ERROR == ret)
 		{
 			//throw "Send error!";
+			std::cout << "Send error!\n";
 			return -1;
 		}
 
@@ -104,6 +109,8 @@ public:
 		if (SOCKET_ERROR == ret)
 		{
 			//throw "Recv error!";
+			std::cout << "Recv error!\n";
+
 			return -1;
 		}
 
