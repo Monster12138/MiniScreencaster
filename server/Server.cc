@@ -3,6 +3,7 @@
 #include <string.h>
 #include <vector>
 #include <thread>
+#include "TimeStr.h"
 #include "Socket.hpp"
 using namespace std;
 
@@ -22,46 +23,70 @@ struct SocketPair
 };
 
 typedef unsigned char uchar;
-uchar recvbuf[1000000];
 
 void threadMain(SocketPair sockPair)
 {
+    char timeStr[15];
+    getNowTime(timeStr);
+    char fileName[30];
+    sprintf(fileName, "./log/%s.log", timeStr);
+    FILE* fp = fopen(fileName, "w");
     int len;
     int recvBytes, sendBytes;
     char flag = 1;
+    uchar recvbuf[1000000];
     sockPair.senderSocket.Send(&flag, sizeof(char));
     while(1)
     {
-        sockPair.senderSocket.Recv(&len, sizeof(int));
-        sockPair.recverSocket.Send(&len, sizeof(int));
+        int ret = sockPair.senderSocket.Recv(&len, sizeof(int));
+        if(0 >= ret)
+            break;
+        ret = sockPair.recverSocket.Send(&len, sizeof(int));
+        if(0 >= ret)
+            break;
+        fprintf(fp, "len: %d\n", len);
+        //std::cout << "len :" << len << std::endl;
+
         recvBytes = 0;
         sendBytes = 0;
-        std::cout << "len :" << len << std::endl;
-        sockPair.senderSocket.Send(&flag, sizeof(char));
+
+        ret = sockPair.senderSocket.Send(&flag, sizeof(char));
+        if(0 >= ret)
+            break;
+
         while(recvBytes < len)
         {
             int recverRet = sockPair.senderSocket.Recv(recvbuf + recvBytes, len - recvBytes);
             if(0 >= recverRet)
-                break;
+            {
+                goto done;
+            }
             recvBytes += recverRet;
-            std::cout << "Recv " <<recvBytes << " Bytes data\n";
+            fprintf(fp, "Recv %d Bytes data\n", recvBytes);
+            //std::cout << "Recv " <<recvBytes << " Bytes data\n";
         }
 
         
         while(sendBytes < len)
         {
-            std::cout << "Sending...\n";
             int senderRet = sockPair.recverSocket.Send(recvbuf + sendBytes, len - sendBytes);
             if(0 >= senderRet)
-                break;
+            {
+                goto done;
+            }
             sendBytes += senderRet;
-            std::cout << "Send " << sendBytes << " Bytes data"<< std::endl;
+            fprintf(fp, "Send %d Bytes data\n", sendBytes);
+            //std::cout << "Send " << sendBytes << " Bytes data"<< std::endl;
         }
 
-        std::cout << "==========================Forward " << sendBytes << " Bytes data\n";
+        fprintf(fp, "/=========== Forward %d Bytes data===========/\n", sendBytes);
+        //std::cout << "==========================Forward " << sendBytes << " Bytes data\n";
     }
+done:
+    fclose(fp);
     sockPair.senderSocket.Close();
     sockPair.recverSocket.Close();
+    cout << "/*************** a thread quit ****************/\n";
 }
 
 int main()
@@ -84,23 +109,24 @@ int main()
     SocketPair sockpair;
     while(1)
     {
+        cout << "Wait sender...\n";
         sockpair.senderSocket.setSocket(servSocket.Accept((sockaddr*)&senderAddr, len));
 
         memcpy(&sAddr.ip, &senderAddr.sin_addr.s_addr, sizeof(in_addr));
         sAddr.port = senderAddr.sin_port;
         cout << "Sender ip:" << inet_ntoa(sAddr.ip) << " port:" << sAddr.port << endl;
         sockpair.senderSocket.Send(&sAddr, sizeof(Addr));
-        cout << "Send sAddr finish\n";
 
+        cout << "Wait receiver...\n";
         sockpair.recverSocket.setSocket(servSocket.Accept((sockaddr*)&recverAddr, len));
         memcpy(&rAddr.ip, &recverAddr.sin_addr.s_addr, sizeof(in_addr));
         rAddr.port = recverAddr.sin_port;
         cout << "Recver ip:" << inet_ntoa(rAddr.ip) << " port:" << rAddr.port << endl;
         sockpair.recverSocket.Send(&sAddr, sizeof(Addr));
-        cout << "Send sAddr finish\n";
         
         thread newThread{threadMain, sockpair};
         newThread.detach();
+        cout << "/*************** new thread run ****************/\n";
     }
     servSocket.Close();
     return 0;
