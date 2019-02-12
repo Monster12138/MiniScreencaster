@@ -1,98 +1,103 @@
 #ifndef _SENDER_HPP_
 #define _SENDER_HPP_
 
+#include "Screen.hpp"
 #include "WinSocket.hpp"
 #include "ThreadBase.hpp"
-#include "opencv2/opencv.hpp"
-#include "Screen.hpp"
-#pragma comment (lib, "ws2_32.lib")  //加载 ws2_32.dll
-#pragma warning(disable : 4996)
+#include "GlobalData.h"
 
 //默认格式为CV_8UC4
 using namespace cv;
 
 typedef unsigned char uchar;
 
+struct Addr
+{
+	struct in_addr ip;
+	int port;
+};
+
 class Sender :public ThreadBase
 {
 public:
-	Sender()
-	{}
+	Sender(GlobalData *pData):pData_(pData) {}
 
-	~Sender()
+	Sender(const Sender& rs) = delete;
+
+	Sender& operator=(const Sender& rs) = delete;
+
+	bool sendVector()
 	{
-		ServSocket_.Close();
-		ClntSocket_.Close();
-	}
+		char c;
+		int check = 0;
+		int sentBytes = 0;
+		int ret = sock_.Recv(&c, sizeof(char));
+		if (ret <= 0)
+			return false;
 
-	virtual void start()
-	{
-		Sender_quit = false;
-
-		try
+		while (sentBytes < len_)
 		{
-			std::cout << "Create Socket...\n";
-			ServSocket_.Create(AF_INET, SOCK_STREAM, 0);
-
-			int contain = 0;
-			
-			setsockopt(ServSocket_.getSocket(), SOL_SOCKET, SO_REUSEADDR, (char *)&contain, sizeof(int));
-			//绑定套接字
-			std::cout << "Binding...\n";
-			ServSocket_.Bind(8888);
-			//进入监听状态
-			std::cout <<"Listening...\n";
-			ServSocket_.Listen(5);
+			ret = sock_.Send((char *)&vec_[0] + sentBytes, len_ - sentBytes);
+			if (ret <= 0)
+				return false;
+			sentBytes += ret;
+			//cout << "Send " << sentByte << " Byte\n";
 		}
-		catch (char* e)
-		{
-			std::cout << "Socket error:" << e << std::endl;
-		}
-
-		ThreadBase::start();
+		//cout << "Check: " << check << endl;
+		cout << "sentBytes: " << sentBytes << endl;
+		return true;
 	}
 
-	virtual void quit()
-	{
-		Sender_quit = true;
-		ThreadBase::quit();
-	}
-
-private:
 	virtual void threadMain()override
 	{
-		SOCKADDR clntAddr;
-		int nSize = sizeof(SOCKADDR);
-		while (1)
+		cout << "Sender thread start!\n";
+		//初始化 DLL
+		WSADATA data;
+		WORD w = MAKEWORD(2, 0);
+		::WSAStartup(w, &data);
+
+		Addr myAddr;
+		vector<int> param = vector<int>(2);
+		param[0] = IMWRITE_JPEG_CHROMA_QUALITY;
+		param[1] = 0;
+		vec_.reserve(1000000);
+
+		sock_.Create(AF_INET, SOCK_STREAM, 0);
+		int contain;
+		setsockopt(sock_.getSocket(), SOL_SOCKET, SO_REUSEADDR, (char *)&contain, sizeof(int));
+
+		sock_.Connect(8888, "39.108.227.206");
+
+		sock_.Recv((char *)&myAddr, sizeof(Addr));
+		std::cout << "local ip:" << inet_ntoa(myAddr.ip) << " port:" << myAddr.port << std::endl;
+
+		while (isRunning())
 		{
-			Sender_quit = false;
+			pData_->RWLock_.ReadLock();
+			imencode(".jpeg", pData_->screen_, vec_, param);
+			pData_->RWLock_.Unlock();
 
-			Mat dstMat;
-			HBITMAP hBmp;
-			while (!Sender_quit)
+			len_ = vec_.size();
+			cout << "code file size(jpeg):" << len_ << endl;
+			cout << "==============================================\n";
+			sock_.Send((char *)&len_, sizeof(int));
+
+			if (!sendVector())
 			{
-				Screen(hBmp, width, height);
-				HBitmapToMat(hBmp, screen_); 
-				resize(screen_, dstMat, Size(width *2/3, height *2/3), 0, 0);
-				
-				//std::cout << CheckMat() << std::endl;
-				//sendMat(screen_);	
-				
-				imshow("Sender", dstMat);
-				waitKey(30);
+				cout << "网络错误！\n";
+				break;
 			}
-			std::cout << "Disconnect!\n";
+			vec_.clear();
 		}
-		
-	}
 
-	int width;
-	int height;
-	Socket ServSocket_;
-	Socket ClntSocket_;
-	bool Sender_quit;
-	BITMAP	Bmp_;
-	Mat screen_;
+		WSACleanup();
+		cout << "Sender thread quit!\n";
+	}
+private:
+	GlobalData *pData_;
+	Socket sock_;
+	vector<uchar> vec_;
+	int len_;
 };
 
 #endif // !_SENDER_HPP_

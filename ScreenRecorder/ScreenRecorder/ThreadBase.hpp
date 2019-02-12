@@ -2,36 +2,44 @@
 #define _THREAD_HPP_
 
 #include <thread>
-#include <iostream>
 
 class ThreadBase
 {
 public:
-	ThreadBase() :m_thread(nullptr) {}
+	ThreadBase(){}
 
-	virtual ~ThreadBase() {}
-
-	std::thread* getpThread()
+	virtual ~ThreadBase() 
 	{
-		return m_thread;
+		if (isRunning_)
+		{
+			isRunning_ = false;
+		}
+		if (th_.joinable())
+		{
+			th_.join();
+		}
 	}
 
 	virtual void start()
 	{
-		if (nullptr == m_thread)
-		{
-			std::cout << "new thread is created!\n";
-			m_thread = new std::thread{ &ThreadBase::threadMain, this };
-		}
+		isRunning_ = true;
+		std::thread tmpth(std::bind(&ThreadBase::threadMain, this));
+		th_ = std::move(tmpth);
 	}
 
 	virtual void quit()
 	{
-		if (nullptr != m_thread)
-		{
-			delete m_thread;
-			m_thread = nullptr;
-		}
+		isRunning_ = false;
+	}
+
+	virtual void join()
+	{
+		th_.join();
+	}
+
+	bool isRunning()
+	{
+		return isRunning_;
 	}
 
 	void mSleep(int64_t m)
@@ -46,7 +54,8 @@ public:
 protected:
 	virtual void threadMain() = 0;
 private:
-	std::thread* m_thread;
+	bool isRunning_;
+	std::thread th_;
 };
 
 

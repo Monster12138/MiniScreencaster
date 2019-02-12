@@ -1,44 +1,37 @@
-#if 0
+#if 1
 
+#define WIN32_LEAN_AND_MEAN
+#include "GlobalData.h"
 #include "Sender.hpp"
 #include "ThreadBase.hpp"
+#include "RWLock.hpp"
+#include "Screen.hpp"
+#include "Screener.hpp"
+#include "Displayer.hpp"
 #include <iostream>
+
+#pragma comment (lib, "ws2_32.lib")  //º”‘ÿ ws2_32.dll
+#pragma warning(disable : 4996)
+
 using namespace std;
-
-class mythread :public ThreadBase
-{
-public:
-	void start()override
-	{
-		quit_ = false;
-		ThreadBase::start();
-	}
-
-	void quite()
-	{
-		quit_ = true;
-		ThreadBase::quit();
-	}
-
-	void threadMain()override
-	{
-		while(!quit_)
-		{
-			cout << "threadMain()" << this_thread::get_id() << endl;
-			quite();
-		}
-
-	}
-private:
-	int data_;
-	bool quit_;
-};
 
 int main()
 {
-	mythread t;
-	t.start();
-	t.getpThread()->join();
+	GlobalData data;
+
+	GetWidthAndHeight(data.width_, data.height_);
+
+	Screener screener(&data);
+	Displayer displayer(&data);
+	Sender sender(&data);
+	screener.start();
+	displayer.start();
+	sender.start();
+
+	sender.join();
+	displayer.quit();
+	screener.quit();
+
 	return 0;
 }
 
@@ -49,6 +42,7 @@ int main()
 #include <iostream>
 #include <string.h>
 #include <vector>
+#include <thread>
 #pragma comment (lib, "ws2_32.lib")  //º”‘ÿ ws2_32.dll
 #pragma warning(disable : 4996)
 
@@ -133,7 +127,6 @@ int main()
 			cout << "Õ¯¬Á¥ÌŒÛ£°\n";
 			break;
 		}
-		mat2 = imdecode(Mat(buff), IMREAD_COLOR);
 
 		resize(mat, mat2, Size(width * 2 / 3, height * 2 / 3), 0, 0);
 		imshow("Sender", mat2);

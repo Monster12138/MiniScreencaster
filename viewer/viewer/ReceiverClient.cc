@@ -46,7 +46,6 @@ uchar recvbuf[1000000];
 
 bool recvScreen(vector<uchar> &vec, Socket socket)
 {
-	int check = 0;
 	int recvBytes = 0;
 
 	int len;
@@ -62,13 +61,13 @@ bool recvScreen(vector<uchar> &vec, Socket socket)
 		recvBytes += ret;
 		cout << "Receive " << recvBytes << " Bytes\n";
 	}
-	cout << "Check: " << check << endl;
 
 	return true;
 }
 
 int main()
 {
+#if 1
 	//³õÊ¼»¯ DLL
 	WSADATA data;
 	WORD w = MAKEWORD(2, 0);
@@ -102,14 +101,18 @@ int main()
 			cout << "ÍøÂç´íÎó!\n";
 			break;
 		}
-		cout << "======================================\n";
+		cout << "//======================================//\n";
 		mat = imdecode(Mat(buff), IMREAD_COLOR);
 		buff.clear();
 		resize(mat, dstMat, Size(width * 2 / 3, height * 2 / 3), 0, 0);
 		imshow("Recver", dstMat);
-		waitKey(1);
+		if (27 == waitKey(1))
+		{
+			break;
+		}
 	}
 	WSACleanup();
+#endif
 }
 
 #endif
