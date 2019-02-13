@@ -8,6 +8,7 @@
 
 //默认格式为CV_8UC4
 using namespace cv;
+using namespace std;
 
 typedef unsigned char uchar;
 
@@ -75,9 +76,9 @@ public:
 		{
 			pData_->RWLock_.ReadLock();
 			imencode(".jpeg", pData_->screen_, vec_, param);
-			pData_->RWLock_.Unlock();
+			pData_->RWLock_.UnReadLock();
 
-			len_ = vec_.size();
+			len_ = vec_.size(); 
 			cout << "code file size(jpeg):" << len_ << endl;
 			cout << "==============================================\n";
 			sock_.Send((char *)&len_, sizeof(int));

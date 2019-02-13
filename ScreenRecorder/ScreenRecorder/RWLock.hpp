@@ -1,3 +1,45 @@
+#ifndef _RWLOCK_HPP_
+#define _RWLOCK_HPP_
+
+#include <Windows.h>
+
+class MyRWLock
+{
+public:
+	MyRWLock()
+	{
+		InitializeSRWLock(&lock_);
+	}
+
+	void WriteLock()
+	{
+		AcquireSRWLockExclusive(&lock_);
+	}
+
+	void UnWriteLock()
+	{
+		ReleaseSRWLockExclusive(&lock_);
+	}
+
+	void ReadLock()
+	{
+		AcquireSRWLockShared(&lock_);
+	}
+
+	void UnReadLock()
+	{
+		ReleaseSRWLockShared(&lock_);
+	}
+
+private:
+	SRWLOCK lock_;
+};
+
+#endif // !_RWLOCK_HPP_
+
+
+#if 0
+
 #ifndef _RWLockImpl_Header
 #define _RWLockImpl_Header
 
@@ -280,3 +322,4 @@ inline void CMyRWLock::Unlock()
 #endif
 
 
+#endif

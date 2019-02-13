@@ -22,12 +22,12 @@ public:
 		pData_->RWLock_.ReadLock();
 		showWidth = pData_->width_ * 2 / 3;
 		showHeight = pData_->height_ * 2 / 3;
-		pData_->RWLock_.Unlock();
+		pData_->RWLock_.UnReadLock();
 		while (isRunning())
 		{
 			pData_->RWLock_.ReadLock();
 			resize(pData_->screen_, dstMat, Size(showWidth, showHeight), 0, 0);
-			pData_->RWLock_.Unlock();
+			pData_->RWLock_.UnReadLock();
 
 			imshow("Sender", dstMat);
 			if (waitKey(10) == 27)

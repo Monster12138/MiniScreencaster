@@ -26,7 +26,7 @@ public:
 			pData_->RWLock_.WriteLock();
 			Screen(pData_->hbmp_, pData_->width_, pData_->height_);
 			HBitmapToMat(pData_->hbmp_, pData_->screen_);
-			pData_->RWLock_.Unlock();
+			pData_->RWLock_.UnWriteLock();
 		}
 		cout << "Screener thread quit!\n";
 	}
