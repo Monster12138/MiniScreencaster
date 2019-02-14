@@ -72,6 +72,8 @@ public:
 		sock_.Recv((char *)&myAddr, sizeof(Addr));
 		std::cout << "local ip:" << inet_ntoa(myAddr.ip) << " port:" << myAddr.port << std::endl;
 
+		char flag;
+		sock_.Recv(&flag, sizeof(char));
 		while (isRunning())
 		{
 			pData_->RWLock_.ReadLock();
@@ -88,7 +90,6 @@ public:
 				cout << "ÍøÂç´íÎó£¡\n";
 				break;
 			}
-			vec_.clear();
 		}
 
 		WSACleanup();
