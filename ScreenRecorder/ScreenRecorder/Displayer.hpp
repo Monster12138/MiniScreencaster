@@ -21,25 +21,29 @@ public:
 		cout << "Displayer thread start!\n";
 
 		pData_->RWLock_.ReadLock();
-		cout << "Displayer thread get readLock\n";
 		showWidth = pData_->width_ * 2 / 3;
 		showHeight = pData_->height_ * 2 / 3;
 		pData_->RWLock_.UnReadLock();
-		cout << "Displayer thread get readLock\n";
 
 		while (isRunning())
 		{
+#if 1
 			pData_->RWLock_.ReadLock();
-			cout << "Displayer thread get readLock\n";
 			resize(pData_->screen_, dstMat, Size(showWidth, showHeight), 0, 0);
 			pData_->RWLock_.UnReadLock();
-			cout << "Displayer thread get readLock\n";
 
 			imshow("Sender", dstMat);
+#else
+			pData_->RWLock_.ReadLock();
+			img = pData_->screen_;
+			pData_->RWLock_.UnReadLock();
+			imshow("Sender", pData_->screen_);
+#endif
 			if (waitKey(10) == 27)
 				break;
 		}
 		cout << "Displayer thread quit!\n";
+		exit(0);
 	}
 private:
 	GlobalData *pData_;

@@ -21,6 +21,8 @@ public:
 	{
 		cout << "Screener thread start!\n";
 
+
+#if 1
 		while (isRunning())
 		{
 			pData_->RWLock_.WriteLock();
@@ -29,7 +31,22 @@ public:
 			pData_->RWLock_.UnWriteLock();
 			mSleep(1);
 		}
+#else
+		VideoCapture cap(0);
+		if (!cap.isOpened())
+		{
+			exit(2);
+		}
+		while (isRunning())
+		{
+			pData_->RWLock_.WriteLock();
+			cap >> pData_->screen_;
+			pData_->RWLock_.UnWriteLock();
+			mSleep(1);
+		}
+#endif
 		cout << "Screener thread quit!\n";
+		exit(1);
 	}
 private:
 	GlobalData *pData_;

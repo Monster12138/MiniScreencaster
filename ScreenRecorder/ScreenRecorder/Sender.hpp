@@ -6,7 +6,6 @@
 #include "ThreadBase.hpp"
 #include "GlobalData.h"
 
-//默认格式为CV_8UC4
 using namespace cv;
 using namespace std;
 
@@ -70,7 +69,9 @@ public:
 		sock_.Connect(8888, "39.108.227.206");
 
 		sock_.Recv((char *)&myAddr, sizeof(Addr));
+		std::cout << "//****************************************************//\n";
 		std::cout << "local ip:" << inet_ntoa(myAddr.ip) << " port:" << myAddr.port << std::endl;
+		std::cout << "Waiting for viewer...\n";
 
 		char flag;
 		sock_.Recv(&flag, sizeof(char));
@@ -87,13 +88,14 @@ public:
 
 			if (!sendVector())
 			{
-				cout << "网络错误！\n";
+				cout << "接收客户端退出！\n";
 				break;
 			}
 		}
 
 		WSACleanup();
 		cout << "Sender thread quit!\n";
+		exit(0);
 	}
 private:
 	GlobalData *pData_;
