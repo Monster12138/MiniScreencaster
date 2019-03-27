@@ -1,30 +1,5 @@
 #if 0
 
-#include "Receiver.hpp"
-#include <iostream>
-
-int main()
-{
-	//初始化 DLL
-	WSADATA data;
-	WORD w = MAKEWORD(2, 0);
-	::WSAStartup(w, &data);
-
-	GetWidthAndHeight(IMG_WIDTH, IMG_HEIGHT);
-	BUFFER_SIZE = IMG_WIDTH * IMG_HEIGHT * 4 / 32;
-
-	Receiver receiver;
-
-	receiver.start();
-
-	receiver.getpThread()->join();
-
-	WSACleanup();
-	return 0;
-}
-
-#else
-
 #include "WinSocket.hpp"
 #include "Screen.hpp"
 #include <iostream>
@@ -116,3 +91,25 @@ int main()
 }
 
 #endif
+#include "protocol.hpp"
+#pragma comment (lib, "ws2_32.lib")  //加载 ws2_32.dll
+#pragma warning(disable : 4996)
+
+using namespace std;
+
+int main()
+{
+	//初始化 DLL
+	WSADATA data;
+	WORD w = MAKEWORD(2, 0);
+	::WSAStartup(w, &data);
+
+	int sockfd = UDP::Create();
+	UDP::Bind(sockfd, 8777);
+	struct sockaddr_in peer_addr;
+
+	UDP::RecvVideo(sockfd, "Video.mp4", peer_addr);
+
+	WSACleanup();
+	return 0;
+}

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <cstdio>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <algorithm>
 
@@ -24,18 +25,59 @@ typedef std::vector<RecvPack> RP_vector;
 
 class UDP
 {
-	static void SendVideo(int socket, const char *FileName, struct sockaddr_in PeerAddr)
+public:
+	static int Create()
 	{
-		FILE* fp = fopen(FileName, "r");
+		int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+		if (sockfd == -1)
+		{
+			std::cout << "Create error!\n";
+			exit(1);
+		}
+		return sockfd;
+	}
+
+	static void Bind(int sockfd, const int port, const char* ip = nullptr)
+	{
+		sockaddr_in addr;
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(port);
+		if (nullptr != ip)
+		{
+			addr.sin_addr.S_un.S_addr = inet_addr(ip);
+		}
+		else
+		{
+			addr.sin_addr.S_un.S_addr = INADDR_ANY;
+		}
+
+		if (::bind(sockfd, (sockaddr*)& addr, sizeof(addr)) == SOCKET_ERROR)
+		{
+			//throw "Bind error!";
+			std::cout << "Bind error!\n";
+			exit(2);
+		}
+	}
+
+	static void SendVideo(int socket, const char *FileName,const struct sockaddr_in &PeerAddr)
+	{
+		std::ifstream video(FileName, std::ios::in | std::ios::binary);
 
 		SendPack sp;
 		sp.head.id = 0;
-		while (sp.head.length = fread(sp.data, 1, 1024, fp))
+		
+		timeval tv;
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+
+		int file_size = 0, resent = 0;
+		while (sp.head.length = video.read(sp.data, 1024).gcount())
 		{
 			++sp.head.id;
 			if (sp.head.length < 1024)sp.head.isLast = true;
 			else sp.head.isLast = false;
 
+			RESENT:
 			sendto(socket, 
 				(char*)&sp, 
 				sizeof(PackInfo) + sp.head.length, 
@@ -47,6 +89,21 @@ class UDP
 			std::cout << "id:" << sp.head.id << 
 				" length:" << sp.head.length << 
 				" isLast: " << sp.head.isLast << std::endl;
+
+			fd_set fs;
+			int response_id = 0;
+			int addr_len = sizeof(PeerAddr);
+
+			FD_SET(socket, &fs);
+			if(select(socket + 1, nullptr, &fs, nullptr, &tv))
+				recvfrom(socket, (char *)&response_id, sizeof(response_id), 0, (struct sockaddr*)&PeerAddr, &addr_len);
+			else 
+			{
+				++resent;
+				goto RESENT;
+			}
+			
+			file_size += sp.head.length;
 		}
 
 		sendto(socket,
@@ -55,29 +112,9 @@ class UDP
 			0,
 			(struct sockaddr*)&PeerAddr,
 			sizeof(PeerAddr));
-		fclose(fp);
-	}
-
-	static void RecvVideo(int socket, const char *FileName, struct sockaddr_in PeerAddr)
-	{
-		FILE* fp = fopen(FileName, "r");
 		
-		RP_vector rp_vec;
-		RecvPack rp;
-		int addr_len = sizeof(PeerAddr);
-		while (recvfrom(socket, (char *)&rp, sizeof(rp), 0, (struct sockaddr*)&PeerAddr, &addr_len))
-		{
-			rp_vec.push_back(rp);
-		}
-
-		sort(rp_vec.begin(), rp_vec.end(),
-			[](const RecvPack &rp1, const RecvPack &rp2) {return rp1.head.id > rp2.head.id; });
-
-		for (const auto e : rp_vec)
-		{
-			fwrite(e.data, 1, e.head.length, fp);
-		}
-
-		fclose(fp);
+		std::cout << "file size: " << file_size << std::endl;
+		std::cout << "resent: " << resent << std::endl;
+		video.close();
 	}
 };

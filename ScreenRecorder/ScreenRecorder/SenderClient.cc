@@ -35,7 +35,7 @@ int main()
 
 #include "WinSocket.hpp"
 #include "Screen.hpp"
-
+#include "protocol.hpp"
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -49,11 +49,17 @@ using namespace std;
 
 
 int main() {
+	//初始化 DLL
+	WSADATA data;
+	WORD w = MAKEWORD(2, 0);
+	::WSAStartup(w, &data);
+
+#if 0
 	VideoCapture capture(0);
 	if (!capture.isOpened())
 		return -1;
 
-#if 0
+
 	unsigned int f = (unsigned)capture.get(cv::CAP_PROP_FOURCC);
 	char fourcc[] = {
 		(char)f, // First character is lowest bits
@@ -63,7 +69,7 @@ int main() {
 		'\0' // and don't forget to terminate
 	};
 	cout << "FourCC for this video was: " << fourcc << endl;
-#endif
+
 	
 	double dWidth = capture.get(CAP_PROP_FRAME_WIDTH); //get the width of frames of the video  
 	double dHeight = capture.get(CAP_PROP_FRAME_HEIGHT);
@@ -93,19 +99,42 @@ int main() {
 	
 	capture.release();
 	destroyAllWindows();
+#endif
+	cout << "视频录制完成...\n";
+
+	//ifstream video("VideoTest.mp4", ios::in | ios::binary);
+	//ofstream video2("VideoTest2.mp4", ios::out | ios::binary);
+	//if (!video.is_open())
+	//{
+	//	cout << "can' open file\n";
+	//	return -1;
+	//}
+	//char *buf = new char[1024];
+	//
+	//int count = 0;
+	//while (video.read(buf, 100))
+	//{
+	//	count += 100;
+	//	cout << "read 100 byte\n";
+	//	video2.write(buf, 100);
+	//	memset(buf, 0, 100);
+	//}
+	//
+	//cout << count << endl;
+	//video.close();
+	//video2.close();
+	//delete buf;
 	
-	ifstream video("VideoTest.mp4");
-	if (!video.is_open())
-	{
-		cout << "can' open file\n";
-		return -1;
-	}
-	char *buf = new char[1000000];
-	video.get(buf, 1000000, EOF);
-	cout << buf << endl;
-	video.close();
+	int sockfd = UDP::Create();
+	UDP::Bind(sockfd, 8888);
+	struct sockaddr_in peer_addr;
+	peer_addr.sin_family = AF_INET;
+	peer_addr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
+	peer_addr.sin_port = htons(8777);
 
+	UDP::SendVideo(sockfd, "VideoTest.mp4", peer_addr);
 
+	WSACleanup();
 	return 0;
 }
 
