@@ -180,12 +180,14 @@ public:
 	static void RecvVideo(int sockfd, const char *FileName)
 	{
 		std::ofstream video(FileName, std::ios::out | std::ios::binary);
-		char buffer[10240] = { 0 };
+		char buffer[614400] = { 0 };
 		int file_size = 0;
-		while (int len = recv(sockfd, buffer, 10240, 0))
+		int len;
+		while ((len = recv(sockfd, buffer, 614400, 0)) > 0)
 		{
 			video.write(buffer, len);
 			file_size += len;
+			//std::cout << "recv " << len << "Byte datas\n";
 		}
 
 		std::cout << "recv file: " << file_size << std::endl;

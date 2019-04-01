@@ -92,6 +92,7 @@ int main()
 
 #endif
 #include "protocol.hpp"
+#include <opencv2\opencv.hpp>
 #pragma comment (lib, "ws2_32.lib")  //╪сть ws2_32.dll
 #pragma warning(disable : 4996)
 
@@ -118,8 +119,27 @@ int main()
 	struct sockaddr_in peer_addr;
 	int len = sizeof(peer_addr);
 	int work_sock = TCP::Accept(listen_sock, (struct sockaddr*)&peer_addr, len);
-
+	cout << "accept peer ip:" << peer_addr.sin_addr.S_un.S_addr << " port:" << ntohs(peer_addr.sin_port) << endl;
 	TCP::RecvVideo(work_sock, "Video.mp4");
+
+	cv::VideoCapture video("Video.mp4");
+	if (!video.isOpened())
+	{
+		cout << "video open failed!\n";
+		return -1;
+	}
+
+	cv::Mat frame;
+
+	while (1)
+	{
+		video >> frame;
+		if (frame.empty())
+			break;
+		cv::imshow("Video", frame);
+		if (cv::waitKey(27) >= 0)
+			break;
+	}
 
 	WSACleanup();
 	return 0;

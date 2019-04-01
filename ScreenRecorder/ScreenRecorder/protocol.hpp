@@ -196,12 +196,14 @@ public:
 	static void SendVideo(int sockfd, const char *FileName)
 	{
 		std::ifstream video(FileName, std::ios::in | std::ios::binary);
-		char buffer[10240] = { 0 };
+		char buffer[614400] = { 0 };
 		int file_size = 0;
-		while (int len = video.read(buffer, 10240).gcount())
+		while (int len = video.read(buffer, 614400).gcount())
 		{
 			send(sockfd, buffer, len, 0);
 			file_size += len;
+			//std::cout << "send " << len << "Byte datas\n";
+			Sleep(1);
 		}
 		send(sockfd, buffer, 0, 0);
 
