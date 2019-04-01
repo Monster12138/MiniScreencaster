@@ -125,15 +125,30 @@ int main() {
 	//video2.close();
 	//delete buf;
 	
+#if 0 //UDP·¢ËÍ
 	int sockfd = UDP::Create();
 	UDP::Bind(sockfd, 8888);
 	struct sockaddr_in peer_addr;
 	peer_addr.sin_family = AF_INET;
-	peer_addr.sin_addr.S_un.S_addr = inet_addr("127.0.0.1");
+	peer_addr.sin_addr.S_un.S_addr = inet_addr("39.108.227.206");
 	peer_addr.sin_port = htons(8777);
 
 	UDP::SendVideo(sockfd, "VideoTest.mp4", peer_addr);
+#endif 
 
+	int sockfd = TCP::Create();
+	TCP::Bind(sockfd, 8888);
+
+	struct sockaddr_in peer_addr;
+	int len = sizeof(peer_addr);
+	if (TCP::Connect(sockfd, 8777, "127.0.0.1"))
+	{
+		TCP::SendVideo(sockfd, "VideoTest.mp4");
+	}
+	else
+	{
+		std::cout << "Connect failed!\n";
+	}
 	WSACleanup();
 	return 0;
 }

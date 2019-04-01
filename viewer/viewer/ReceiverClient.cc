@@ -104,11 +104,22 @@ int main()
 	WORD w = MAKEWORD(2, 0);
 	::WSAStartup(w, &data);
 
+#if 0 //UDPΩ” ’
 	int sockfd = UDP::Create();
 	UDP::Bind(sockfd, 8777);
 	struct sockaddr_in peer_addr;
 
 	UDP::RecvVideo(sockfd, "Video.mp4", peer_addr);
+#endif
+
+	int listen_sock = TCP::Create();
+	TCP::Bind(listen_sock, 8777);
+	TCP::Listen(listen_sock, 5);
+	struct sockaddr_in peer_addr;
+	int len = sizeof(peer_addr);
+	int work_sock = TCP::Accept(listen_sock, (struct sockaddr*)&peer_addr, len);
+
+	TCP::RecvVideo(work_sock, "Video.mp4");
 
 	WSACleanup();
 	return 0;
