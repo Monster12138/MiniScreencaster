@@ -36,11 +36,8 @@ int main()
 #include "WinSocket.hpp"
 #include "Screen.hpp"
 #include "protocol.hpp"
-#include <iostream>
-#include <fstream>
-#include <string.h>
-#include <vector>
-#include <thread>
+#include "SendPool.hpp"
+
 #pragma comment (lib, "ws2_32.lib")  //加载 ws2_32.dll
 #pragma warning(disable : 4996)
 
@@ -54,54 +51,7 @@ int main() {
 	WORD w = MAKEWORD(2, 0);
 	::WSAStartup(w, &data);
 
-#if 0
-	VideoCapture capture(0);
-	if (!capture.isOpened())
-		return -1;
-
-
-	unsigned int f = (unsigned)capture.get(cv::CAP_PROP_FOURCC);
-	char fourcc[] = {
-		(char)f, // First character is lowest bits
-		(char)(f >> 8), // Next character is bits 8-15
-		(char)(f >> 16), // Next character is bits 16-23
-		(char)(f >> 24), // Last character is bits 24-31
-		'\0' // and don't forget to terminate
-	};
-	cout << "FourCC for this video was: " << fourcc << endl;
-
-	
-	double dWidth = capture.get(CAP_PROP_FRAME_WIDTH); //get the width of frames of the video  
-	double dHeight = capture.get(CAP_PROP_FRAME_HEIGHT);
-	cout << dWidth << "x" << dHeight << endl;
-
-	char *pbuf = new char[10000000];
-	VideoWriter writer("VideoTest.mp4", MAKEFOURCC('D', 'I', 'V', 'X'), 15.0, Size(static_cast<int>(dWidth), static_cast<int>(dHeight)), true);
-	//VideoWriter writer("VideoTest.avi", MAKEFOURCC('M', 'J', 'P', 'G'), 15.0, Size(dWidth, dHeight), true);
-	if (!writer.isOpened())
-	{
-		cout << "writer open failed!\n";
-		return -1;
-	}
-	Mat frame;
-	int frameNum = 100;
-	while (frameNum--) {
-		capture >> frame;
-		imshow("读取视频", frame);
-		writer << frame;
-		if (waitKey(33) == 27)
-			break;//给图像绘制留点时间
-	}
-
-	
-
-	writer.release();
-	
-	capture.release();
-	destroyAllWindows();
-#endif
-	cout << "视频录制完成...\n";
-
+	Test();
 	//ifstream video("VideoTest.mp4", ios::in | ios::binary);
 	//ofstream video2("VideoTest2.mp4", ios::out | ios::binary);
 	//if (!video.is_open())
@@ -136,6 +86,7 @@ int main() {
 	UDP::SendVideo(sockfd, "VideoTest.mp4", peer_addr);
 #endif 
 
+#if 0
 	int sockfd = TCP::Create();
 	TCP::Bind(sockfd, 8888);
 
@@ -149,6 +100,7 @@ int main() {
 	{
 		std::cout << "Connect failed!\n";
 	}
+#endif
 	WSACleanup();
 	return 0;
 }
