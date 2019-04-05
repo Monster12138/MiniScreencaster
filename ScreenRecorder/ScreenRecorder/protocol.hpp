@@ -205,7 +205,6 @@ public:
 			//std::cout << "send " << len << "Byte datas\n";
 			Sleep(1);
 		}
-		send(sockfd, buffer, 0, 0);
 
 		std::cout << "send file: " << file_size << std::endl;
 	}

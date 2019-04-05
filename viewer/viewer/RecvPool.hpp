@@ -14,6 +14,8 @@
 #pragma comment (lib, "ws2_32.lib")  //加载 ws2_32.dll
 #pragma warning(disable : 4996)
 
+
+
 using namespace cv;
 
 typedef std::queue<std::string> SendQueue;
@@ -56,81 +58,63 @@ void PrintFourCC(VideoCapture &capture)
 
 int Producer(SendQueue &sq)
 {
-	std::cout << &sq << std::endl;
-	VideoCapture capture(0);
-	if (!capture.isOpened())
-		return -1;
+	int listen_sock = TCP::Create();
+	TCP::Bind(listen_sock, 8777);
+	TCP::Listen(listen_sock, 5);
 
-	double dWidth = capture.get(CAP_PROP_FRAME_WIDTH); //get the width of frames of the video  
-	double dHeight = capture.get(CAP_PROP_FRAME_HEIGHT);
+	struct sockaddr_in peer_addr;
+	int len = sizeof(peer_addr);
+	int work_sock = TCP::Accept(listen_sock, (struct sockaddr*)&peer_addr, len);
 
-	std::string filename;
+	std::cout << "accept peer ip:" << peer_addr.sin_addr.S_un.S_addr << " port:" << ntohs(peer_addr.sin_port) << std::endl;
 
-	bool quit_flag = false;
-	while (!quit_flag)
+	char *buffer = new char[614400];
+	while (1)
 	{
+		std::string filename;
 		getFileName(filename);
-		std::cout << "Screening:" << filename << "..." << std::endl;
-		VideoWriter writer(filename.c_str(), MAKEFOURCC('D', 'I', 'V', 'X'), 15.0, Size(static_cast<int>(dWidth), static_cast<int>(dHeight)), true);
-
-		if (!writer.isOpened())
-		{
-			std::cout << "writer open failed!\n";
-			return -1;
-		}
-		Mat frame;
-		int frameNum = 90;
-		while (frameNum--) {
-			capture >> frame;
-			imshow("录制屏幕...", frame);
-			writer << frame;
-			if (waitKey(33) == 27)
-			{
-				quit_flag = true;
-				break;
-			}
-		}
-
-		sq.push(filename);
-		std::cout << "Screening:" << filename << " done" << std::endl;
-		writer.release();
-		//remove(filename.c_str());
+		if (TCP::RecvVideo(work_sock, filename.c_str(), buffer) == 0)
+			break;
 	}
-
-	capture.release();
-	destroyAllWindows();
 
 	return 0;
 }
 
 int Consumer(SendQueue &sq)
 {
-	std::cout << &sq << std::endl;
-	int sockfd = TCP::Create();
-	TCP::Bind(sockfd, 8888);
-
-	if (TCP::Connect(sockfd, 8777, "127.0.0.1"))
+	int quit_flag = false;
+	while (!quit_flag)
 	{
+		if (sq.empty())
+		{
+			std::cout << "recv queue empty...\n";
+			Sleep(1000);
+			continue;
+		}
+		std::string filename = sq.front();
+		sq.pop();
+
+		VideoCapture video(filename.c_str());
+		if (!video.isOpened())
+		{
+			std::cout << "video open failed!\n";
+			return -1;
+		}
+
+		Mat frame;
+
 		while (1)
 		{
-			if (sq.empty())
+			video >> frame;
+			if (frame.empty())
+				break;
+			imshow("实时画面", frame);
+			if (waitKey(33) == 27)
 			{
-				std::cout << "queue empty...\n";
-				Sleep(1000);
+				quit_flag = true;
+				break;
 			}
-			else
-			{
-				std::string filename(sq.front());
-				sq.pop();
-				std::cout << "send file : " << filename << std::endl;
-				TCP::SendVideo(sockfd, filename.c_str());
-			}
-
 		}
-	}
-	else
-	{
-		std::cout << "Connect failed!\n";
 	}
 
 	return 0;
@@ -141,7 +125,6 @@ void Test()
 	SendQueue sq;
 	std::thread pth(Producer, ref(sq));
 	std::thread cth(Consumer, ref(sq));
-
 	cth.join();
 	pth.join();
 }

@@ -177,19 +177,21 @@ public:
 		std::cout << "send file: " << file_size << std::endl;
 	}
 
-	static void RecvVideo(int sockfd, const char *FileName)
+	static int RecvVideo(int sockfd, const char *FileName, char *buffer)
 	{
 		std::ofstream video(FileName, std::ios::out | std::ios::binary);
-		char buffer[614400] = { 0 };
+		memset(buffer, 0, 614400);
 		int file_size = 0;
 		int len;
 		while ((len = recv(sockfd, buffer, 614400, 0)) > 0)
 		{
 			video.write(buffer, len);
 			file_size += len;
+			if (len < 61440)break;
 			//std::cout << "recv " << len << "Byte datas\n";
 		}
 
-		std::cout << "recv file: " << file_size << std::endl;
+		std::cout << "recv file: " << FileName  << " size: "<< file_size << "Byte" << std::endl;
+		return file_size;
 	}
 };

@@ -91,7 +91,11 @@ int main()
 }
 
 #endif
+
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include "protocol.hpp"
+#include "RecvPool.hpp"
 #include <opencv2\opencv.hpp>
 #pragma comment (lib, "ws2_32.lib")  //╪сть ws2_32.dll
 #pragma warning(disable : 4996)
@@ -113,6 +117,7 @@ int main()
 	UDP::RecvVideo(sockfd, "Video.mp4", peer_addr);
 #endif
 
+#if 0
 	int listen_sock = TCP::Create();
 	TCP::Bind(listen_sock, 8777);
 	TCP::Listen(listen_sock, 5);
@@ -140,7 +145,9 @@ int main()
 		if (cv::waitKey(27) >= 0)
 			break;
 	}
+#endif
 
+	Test();
 	WSACleanup();
 	return 0;
 }
